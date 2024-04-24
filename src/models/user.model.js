@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { JsonWebTokenError } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
 //direct encryption is not possible so we use mongoose hooks 
 
@@ -61,6 +61,28 @@ userSchema.pre("save",async function (next) {  //here we cannot use fat arrow fu
 
 userSchema.methods.isPasswordCorrect = async function (password){
     return await bcrypt.compare(password , this.password) //we are giving one password and 1 is accessed via 'this' since methods also have access
+}
+
+userSchema.methods.generateAccessToken = function(){
+    return jwt.sign({
+        _id: this._id,
+        email: this.email,
+        username: this.useranme,
+        fullname:this.fullname
+    },
+    process.env.ACCESS_TOKEN_SECRET,{
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+    }
+)
+}
+userSchema.methods.generateRefreshToken = function(){
+    return jwt.sign({
+        _id: this._id,
+    },
+    process.env.REFRESH_TOKEN_SECRET,{
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+    }
+)
 }
 
 //JWT is a bearer token - it will give data to whoever sends this token (like a key)
